@@ -1,0 +1,225 @@
+.demo-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.demo-title {
+  text-align: center;
+  color: #333;
+  font-size: 2.5rem;
+  margin-bottom: 15px;
+}
+
+.demo-description {
+  text-align: center;
+  color: #666;
+  font-size: 1.1rem;
+  margin-bottom: 40px;
+  line-height: 1.6;
+}
+
+.demo-content {
+  background: white;
+  padding: 40px;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+  margin-bottom: 40px;
+}
+
+.counter-display {
+  text-align: center;
+  margin-bottom: 40px;
+  padding: 30px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 15px;
+  color: white;
+}
+
+.counter-value {
+  font-size: 5rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.counter-label {
+  font-size: 1.2rem;
+  opacity: 0.95;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.controls-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.control-btn {
+  padding: 15px 25px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+.control-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.25);
+}
+
+.control-btn:active {
+  transform: translateY(0);
+}
+
+.btn-icon {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.control-btn.increment {
+  background: #4caf50;
+  color: white;
+}
+
+.control-btn.increment:hover {
+  background: #45a049;
+}
+
+.control-btn.decrement {
+  background: #f44336;
+  color: white;
+}
+
+.control-btn.decrement:hover {
+  background: #da190b;
+}
+
+.control-btn.reset {
+  background: #ff9800;
+  color: white;
+}
+
+.control-btn.reset:hover {
+  background: #e68900;
+}
+
+.control-btn.custom {
+  background: #2196f3;
+  color: white;
+  flex: 0 0 auto;
+}
+
+.control-btn.custom:hover {
+  background: #0b7dda;
+}
+
+.custom-amount {
+  padding: 25px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border: 2px solid #e0e0e0;
+}
+
+.custom-amount label {
+  display: block;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+}
+
+.amount-controls {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.amount-input {
+  flex: 1;
+  padding: 12px;
+  font-size: 1.1rem;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.amount-input:focus {
+  border-color: #667eea;
+}
+
+.code-explanation {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+}
+
+.code-explanation h3 {
+  color: #333;
+  font-size: 1.8rem;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+.explanation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.explanation-card {
+  background: #f0f4ff;
+  padding: 20px;
+  border-radius: 10px;
+  border-left: 4px solid #667eea;
+}
+
+.explanation-card h4 {
+  color: #667eea;
+  margin-bottom: 10px;
+  font-size: 1.1rem;
+}
+
+.explanation-card p {
+  color: #555;
+  line-height: 1.6;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+  .demo-title {
+    font-size: 2rem;
+  }
+  
+  .counter-value {
+    font-size: 4rem;
+  }
+  
+  .demo-content {
+    padding: 25px;
+  }
+  
+  .controls-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .amount-controls {
+    flex-direction: column;
+  }
+  
+  .control-btn.custom {
+    width: 100%;
+  }
+}
