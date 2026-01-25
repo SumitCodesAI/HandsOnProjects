@@ -529,6 +529,171 @@
   font-size: 0.95rem;
 }
 
+/* Author Section */
+.tutorial-section.author-section {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 50px 30px;
+  margin-left: -20px;
+  margin-right: -20px;
+  margin-bottom: 60px;
+}
+
+.author-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.author-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 40px;
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  color: white;
+}
+
+.author-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: white;
+  color: #667eea;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: bold;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+.author-info {
+  flex: 1;
+}
+
+.author-name {
+  font-size: 2rem;
+  margin-bottom: 8px;
+  color: white;
+  font-weight: 700;
+}
+
+.author-title {
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+  opacity: 0.95;
+}
+
+.author-links {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.author-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: white;
+  text-decoration: none;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+.author-link:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.link-icon {
+  font-size: 1.2rem;
+}
+
+.author-bio,
+.author-expertise,
+.author-cta {
+  padding: 35px 40px;
+}
+
+.author-bio {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.author-bio h4,
+.author-expertise h4 {
+  color: #667eea;
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.author-bio p {
+  color: #555;
+  line-height: 1.8;
+  font-size: 1.05rem;
+  margin-bottom: 15px;
+}
+
+.author-expertise {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.expertise-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.expertise-tag {
+  padding: 10px 18px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 25px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.expertise-tag:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
+.author-cta {
+  background: #f8f9fa;
+  text-align: center;
+}
+
+.author-cta p {
+  color: #555;
+  font-size: 1.1rem;
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+
+.repo-link {
+  display: inline-block;
+  padding: 12px 30px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  text-decoration: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 1.05rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
+
+.repo-link:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
 /* CTA Section */
 .cta-section {
   text-align: center;
@@ -536,7 +701,7 @@
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 20px;
   color: white;
-  margin-top: 60px;
+  margin-top: 0;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
@@ -610,7 +775,8 @@
   }
 
   .tutorial-section.alt-bg,
-  .tutorial-section.interview-prep {
+  .tutorial-section.interview-prep,
+  .tutorial-section.author-section {
     padding: 30px 15px;
     margin-left: -20px;
     margin-right: -20px;
@@ -635,6 +801,34 @@
   .comparison-table th,
   .comparison-table td {
     padding: 10px;
+  }
+  
+  .author-header {
+    flex-direction: column;
+    text-align: center;
+    padding: 30px 20px;
+  }
+  
+  .author-name {
+    font-size: 1.6rem;
+  }
+  
+  .author-title {
+    font-size: 1.05rem;
+  }
+  
+  .author-links {
+    justify-content: center;
+  }
+  
+  .author-bio,
+  .author-expertise,
+  .author-cta {
+    padding: 25px 20px;
+  }
+  
+  .expertise-tags {
+    justify-content: center;
   }
 
   .cta-section h2 {

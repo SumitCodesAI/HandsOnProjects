@@ -506,6 +506,85 @@ const Home = () => {
         </div>
       </section>
 
+      {/* About the Author Section */}
+      <section className="tutorial-section author-section">
+        <h2 className="section-title">About the Author 👨‍💻</h2>
+        <div className="author-card">
+          <div className="author-header">
+            <div className="author-avatar">SS</div>
+            <div className="author-info">
+              <h3 className="author-name">Sumit Srivastava</h3>
+              <p className="author-title">Senior Full Stack Developer & AI Engineer</p>
+              <div className="author-links">
+                <a href="mailto:sumitsri051@gmail.com" className="author-link" title="Email">
+                  <span className="link-icon">✉️</span> sumitsri051@gmail.com
+                </a>
+                <a href="https://github.com/SumitCodesAI" target="_blank" rel="noopener noreferrer" className="author-link" title="GitHub">
+                  <span className="link-icon">💻</span> GitHub
+                </a>
+                <a href="https://www.linkedin.com/in/sumitsri051/" target="_blank" rel="noopener noreferrer" className="author-link" title="LinkedIn">
+                  <span className="link-icon">💼</span> LinkedIn
+                </a>
+              </div>
+            </div>
+          </div>
+          
+          <div className="author-bio">
+            <h4>Professional Summary</h4>
+            <p>
+              Senior Full Stack Developer and AI Engineer with nearly 15 years of experience delivering scalable, 
+              enterprise-grade solutions across healthcare, banking, and financial services. Deep expertise in 
+              ASP.NET Core, microservices, and modern front-end development using Angular and TypeScript, with a 
+              strong foundation in cloud-native architectures, DevOps, and distributed systems.
+            </p>
+            <p>
+              Strong hands-on experience with Python, building RESTful APIs using Flask and FastAPI, and developing 
+              data-driven backend services. Proven ability to design, deploy, and scale applications on AWS using 
+              core services such as EC2, S3, RDS and Lambda.
+            </p>
+            <p>
+              Over the past two years, have been actively advancing expertise in Agentic AI, Model Context Protocol (MCP), 
+              n8n automation, and large-language-model orchestration using platforms such as Claude (Anthropic), OpenAI, 
+              and Cursor. Experienced in building and integrating AI agents, developing MCP clients and servers, and 
+              designing reusable automation pipelines with n8n. Also, skilled in developing and training machine learning 
+              models using Python and applying RAG, MCP-based tooling, and AI-driven systems to accelerate engineering 
+              productivity and deliver measurable business impact.
+            </p>
+          </div>
+
+          <div className="author-expertise">
+            <h4>Core Expertise</h4>
+            <div className="expertise-tags">
+              <span className="expertise-tag">Full Stack Development</span>
+              <span className="expertise-tag">ASP.NET Core</span>
+              <span className="expertise-tag">React</span>
+              <span className="expertise-tag">Angular</span>
+              <span className="expertise-tag">TypeScript</span>
+              <span className="expertise-tag">Python</span>
+              <span className="expertise-tag">FastAPI</span>
+              <span className="expertise-tag">Flask</span>
+              <span className="expertise-tag">Microservices</span>
+              <span className="expertise-tag">AWS</span>
+              <span className="expertise-tag">DevOps</span>
+              <span className="expertise-tag">AI Engineering</span>
+              <span className="expertise-tag">Agentic AI</span>
+              <span className="expertise-tag">MCP</span>
+              <span className="expertise-tag">LLM Orchestration</span>
+              <span className="expertise-tag">Machine Learning</span>
+              <span className="expertise-tag">n8n Automation</span>
+              <span className="expertise-tag">RAG Systems</span>
+            </div>
+          </div>
+
+          <div className="author-cta">
+            <p>💡 This learning portal is created to help developers master React and Redux through hands-on practice and comprehensive tutorials.</p>
+            <a href="https://github.com/SumitCodesAI/HandsOnProjects" target="_blank" rel="noopener noreferrer" className="repo-link">
+              View More Projects on GitHub →
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* Quick Start CTA */}
       <div className="cta-section">
         <h2>Ready to Start Learning? 🚀</h2>
