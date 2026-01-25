@@ -1,0 +1,653 @@
+.home-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.hero-section {
+  text-align: center;
+  padding: 60px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20px;
+  color: white;
+  margin-bottom: 60px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.hero-title {
+  font-size: 3rem;
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+
+.hero-subtitle {
+  font-size: 1.3rem;
+  opacity: 0.95;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+/* Tutorial Sections */
+.tutorial-section {
+  margin-bottom: 60px;
+}
+
+.tutorial-section.alt-bg {
+  background: #f8f9fa;
+  padding: 50px 30px;
+  margin-left: -20px;
+  margin-right: -20px;
+  border-radius: 0;
+}
+
+.section-title {
+  text-align: center;
+  color: #333;
+  font-size: 2.5rem;
+  margin-bottom: 30px;
+  font-weight: 700;
+}
+
+.content-card {
+  background: white;
+  padding: 40px;
+  border-radius: 15px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+}
+
+.intro-text {
+  font-size: 1.15rem;
+  line-height: 1.8;
+  color: #555;
+  margin-bottom: 35px;
+  text-align: center;
+}
+
+/* Key Concepts Grid */
+.key-concepts h3,
+.why-react h3,
+.state-types h3,
+.state-techniques h3,
+.redux-principles h3,
+.redux-flow h3,
+.redux-toolkit h3,
+.comparison-section h3,
+.real-world-examples h3,
+.alternatives h3,
+.interview-questions h3,
+.interview-tips h3 {
+  color: #667eea;
+  font-size: 1.8rem;
+  margin-bottom: 25px;
+  margin-top: 35px;
+}
+
+.concepts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 25px;
+  margin-top: 25px;
+}
+
+.concept-item {
+  background: #f0f4ff;
+  padding: 25px;
+  border-radius: 12px;
+  text-align: center;
+  border: 2px solid #e0e7ff;
+  transition: all 0.3s ease;
+}
+
+.concept-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
+  border-color: #667eea;
+}
+
+.concept-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 15px;
+}
+
+.concept-item h4 {
+  color: #333;
+  font-size: 1.3rem;
+  margin-bottom: 10px;
+}
+
+.concept-item p {
+  color: #666;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+/* Benefits List */
+.benefits-list {
+  background: #f8f9fa;
+  padding: 30px 30px 30px 50px;
+  border-radius: 12px;
+  margin-top: 20px;
+}
+
+.benefits-list li {
+  color: #555;
+  margin: 15px 0;
+  line-height: 1.7;
+  font-size: 1.05rem;
+}
+
+.benefits-list strong {
+  color: #667eea;
+  font-weight: 600;
+}
+
+/* State Management */
+.state-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  margin: 25px 0;
+}
+
+.state-card {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 25px;
+  border-radius: 12px;
+  border-left: 4px solid #667eea;
+}
+
+.state-card h4 {
+  color: #333;
+  font-size: 1.2rem;
+  margin-bottom: 15px;
+}
+
+.state-card p {
+  color: #555;
+  margin: 8px 0;
+  font-size: 0.95rem;
+}
+
+.state-card .example {
+  background: #2d2d2d;
+  color: #f8f8f2;
+  padding: 12px;
+  border-radius: 6px;
+  margin-top: 15px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+}
+
+/* Techniques */
+.techniques-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 25px;
+}
+
+.technique {
+  background: #f8f9fa;
+  padding: 25px;
+  border-radius: 12px;
+  border-left: 4px solid #764ba2;
+  transition: all 0.3s ease;
+}
+
+.technique:hover {
+  transform: translateX(5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.technique h4 {
+  color: #333;
+  font-size: 1.3rem;
+  margin-bottom: 10px;
+}
+
+.technique p {
+  color: #666;
+  line-height: 1.7;
+  margin-bottom: 15px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Redux Principles */
+.principles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 30px;
+  margin: 30px 0;
+}
+
+.principle {
+  background: #f0f4ff;
+  padding: 30px;
+  border-radius: 15px;
+  text-align: center;
+  border: 2px solid #e0e7ff;
+}
+
+.principle-number {
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 0 auto 20px;
+}
+
+.principle h4 {
+  color: #333;
+  font-size: 1.3rem;
+  margin-bottom: 15px;
+}
+
+.principle p {
+  color: #666;
+  line-height: 1.7;
+}
+
+/* Redux Flow */
+.flow-visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin: 30px 0;
+  padding: 30px;
+  background: #f8f9fa;
+  border-radius: 15px;
+}
+
+.flow-item {
+  text-align: center;
+  flex: 0 0 auto;
+}
+
+.flow-icon {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.flow-item h4 {
+  color: #333;
+  font-size: 1rem;
+  margin-bottom: 5px;
+}
+
+.flow-item p {
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.flow-arrow {
+  font-size: 2rem;
+  color: #667eea;
+  font-weight: bold;
+}
+
+/* Redux Toolkit Features */
+.toolkit-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.toolkit-feature {
+  background: #e8f5e9;
+  padding: 15px 20px;
+  border-radius: 10px;
+  color: #2e7d32;
+  font-weight: 500;
+  border-left: 4px solid #4caf50;
+}
+
+/* Comparison Section */
+.comparison-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 30px;
+  margin: 30px 0;
+}
+
+.use-redux,
+.avoid-redux {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
+}
+
+.use-redux {
+  border-top: 5px solid #4caf50;
+}
+
+.avoid-redux {
+  border-top: 5px solid #f44336;
+}
+
+.checklist {
+  list-style: none;
+  padding: 0;
+}
+
+.checklist li {
+  padding: 12px 15px;
+  margin: 10px 0;
+  background: #f0f4ff;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+  line-height: 1.6;
+}
+
+.checklist.negative li {
+  background: #ffebee;
+  border-left-color: #f44336;
+}
+
+/* Use Cases */
+.use-cases-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 25px;
+  margin: 30px 0;
+}
+
+.use-case {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 30px;
+  border-radius: 15px;
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.use-case:hover {
+  transform: translateY(-5px);
+}
+
+.use-case-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 15px;
+}
+
+.use-case h4 {
+  color: white;
+  font-size: 1.3rem;
+  margin-bottom: 12px;
+}
+
+.use-case p {
+  color: rgba(255, 255, 255, 0.95);
+  line-height: 1.6;
+}
+
+/* Comparison Table */
+.comparison-table {
+  width: 100%;
+  margin: 25px 0;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
+}
+
+.comparison-table thead {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.comparison-table th,
+.comparison-table td {
+  padding: 15px;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.comparison-table th {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.comparison-table td {
+  color: #555;
+}
+
+.comparison-table tbody tr:hover {
+  background: #f8f9fa;
+}
+
+/* Interview Section */
+.tutorial-section.interview-prep {
+  background: linear-gradient(135deg, #f5f7fa 0%, #e0e7ff 100%);
+  padding: 50px 30px;
+  margin-left: -20px;
+  margin-right: -20px;
+}
+
+.question-group {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  margin: 30px 0;
+}
+
+.question-item {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+  border-left: 5px solid #667eea;
+  transition: all 0.3s ease;
+}
+
+.question-item:hover {
+  transform: translateX(5px);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.12);
+}
+
+.question-item h4 {
+  color: #333;
+  font-size: 1.2rem;
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+
+.question-item p {
+  color: #555;
+  line-height: 1.8;
+  font-size: 1.05rem;
+}
+
+.question-item code {
+  background: #2d2d2d;
+  color: #f8f8f2;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+}
+
+/* Interview Tips */
+.tips-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 25px;
+  margin: 30px 0;
+}
+
+.tip-card {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.tip-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.tip-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 15px;
+}
+
+.tip-card h4 {
+  color: #333;
+  font-size: 1.2rem;
+  margin-bottom: 12px;
+}
+
+.tip-card p {
+  color: #666;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+/* CTA Section */
+.cta-section {
+  text-align: center;
+  padding: 60px 40px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20px;
+  color: white;
+  margin-top: 60px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.cta-section h2 {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  color: white;
+}
+
+.cta-section p {
+  font-size: 1.2rem;
+  margin-bottom: 35px;
+  opacity: 0.95;
+}
+
+.cta-buttons {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.cta-btn {
+  padding: 15px 35px;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  display: inline-block;
+}
+
+.cta-btn.primary {
+  background: white;
+  color: #667eea;
+}
+
+.cta-btn.primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(255, 255, 255, 0.3);
+}
+
+.cta-btn.secondary {
+  background: transparent;
+  color: white;
+  border: 2px solid white;
+}
+
+.cta-btn.secondary:hover {
+  background: white;
+  color: #667eea;
+  transform: translateY(-3px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 2rem;
+  }
+  
+  .hero-subtitle {
+    font-size: 1.1rem;
+  }
+
+  .section-title {
+    font-size: 2rem;
+  }
+
+  .content-card {
+    padding: 25px;
+  }
+
+  .tutorial-section.alt-bg,
+  .tutorial-section.interview-prep {
+    padding: 30px 15px;
+    margin-left: -20px;
+    margin-right: -20px;
+  }
+
+  .comparison-section {
+    grid-template-columns: 1fr;
+  }
+
+  .flow-visual {
+    flex-direction: column;
+  }
+
+  .flow-arrow {
+    transform: rotate(90deg);
+  }
+
+  .comparison-table {
+    font-size: 0.85rem;
+  }
+
+  .comparison-table th,
+  .comparison-table td {
+    padding: 10px;
+  }
+
+  .cta-section h2 {
+    font-size: 1.8rem;
+  }
+
+  .cta-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .cta-btn {
+    width: 100%;
+    max-width: 300px;
+  }
+}
