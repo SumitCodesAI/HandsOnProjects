@@ -1,6 +1,7 @@
 # React & Redux Learning Portal
 
 A comprehensive, interactive learning platform for mastering React and Redux with hands-on examples and detailed notes.
+URL to test running portal - https://sumitcodesai.github.io/HandsOnProjects/react_redux_portal/
 
 ## 🚀 Features
 
