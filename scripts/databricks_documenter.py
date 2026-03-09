@@ -43,11 +43,20 @@ class DatabricksDocumenter:
         params = {"catalog_name": catalog, "schema_name": schema}
         
         print(f"📡 Fetching tables from {catalog}.{schema}...")
+        print(f"   URL: {url}?catalog_name={catalog}&schema_name={schema}")
         response = requests.get(url, headers=self.headers, params=params, timeout=30)
         response.raise_for_status()
         
         tables = response.json().get('tables', [])
         print(f"✅ Found {len(tables)} tables")
+        
+        if not tables:
+            print(f"\n⚠️  WARNING: No tables found in {catalog}.{schema}")
+            print(f"   Check that:")
+            print(f"   1. Catalog name is correct: {catalog}")
+            print(f"   2. Schema name is correct: {schema}")
+            print(f"   3. You have permission to read this schema in Databricks")
+        
         return tables
     
     def get_table_schema(self, catalog: str, schema: str, table: str) -> Dict:
@@ -66,7 +75,8 @@ class DatabricksDocumenter:
         
         tables = self.list_tables(catalog, schema)
         if not tables:
-            print(f"No tables found in {catalog}.{schema}")
+            print(f"\n❌ ERROR: No tables found in {catalog}.{schema} - cannot generate documentation.")
+            print(f"Please verify the schema exists and contains tables.")
             return None
         
         excel_filename = f"{output_dir}/{schema}_schema_and_data.xlsx"
@@ -239,6 +249,17 @@ def main():
     
     args = parser.parse_args()
     
+    # Strict validation - schema and catalog are required
+    if not args.schema or args.schema.strip() == '':
+        print("❌ FATAL: Schema name is empty or missing!")
+        print("   Ensure your issue contains: schema: your_schema_name")
+        return 1
+    
+    if not args.catalog or args.catalog.strip() == '':
+        print("❌ FATAL: Catalog name is empty or missing!")
+        print("   Ensure your issue contains: catalog: your_catalog (default: workspace)")
+        return 1
+    
     host = os.environ.get('DATABRICKS_HOST')
     token = os.environ.get('DATABRICKS_TOKEN')
     
@@ -250,12 +271,9 @@ def main():
     print(f"📌 Catalog: {args.catalog}")
     print(f"📌 Schema: {args.schema}")
     print(f"📌 Format: {args.format}")
-    print(f"📌 Host: {host}\n")
-    
-    # Validate schema name is not empty
-    if not args.schema or args.schema.strip() == '':
-        print("❌ Error: Schema name is empty. Provide --schema argument or schema in issue.")
-        return 1
+    print(f"📌 Host: {host}")
+    print(f"📌 Output Dir: {args.output_dir}\n")
+    print(f"🔗 Will fetch from: {host}/api/2.1/unity-catalog/tables?catalog_name={args.catalog}&schema_name={args.schema}\n")
     
     try:
         documenter = DatabricksDocumenter(host, token)
