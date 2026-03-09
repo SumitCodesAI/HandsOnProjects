@@ -8,7 +8,7 @@ Falls back to realistic mock data if Databricks credentials are not available.
 import os
 import sys
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 # ── Try Databricks connection ────────────────────────────────────────────────
@@ -26,7 +26,7 @@ MOCK_SCHEMA = {
     "catalog": CATALOG_NAME,
     "schema":  SCHEMA_NAME,
     "source":  "sample/demo data (no Databricks credentials found)",
-    "generated_at": datetime.utcnow().strftime("%Y-%m-%d %Human:%M:%S UTC").replace("%Human", "%H"),
+    "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
     "tables": [
         {
             "name": "claims",
@@ -236,7 +236,7 @@ def try_databricks_connection():
             "catalog": CATALOG_NAME,
             "schema":  SCHEMA_NAME,
             "source":  f"Databricks {DATABRICKS_HOST}",
-            "generated_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC"),
+            "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC"),
             "tables": []
         }
         for tbl in tables:
@@ -606,7 +606,7 @@ def generate_markdown(schema_data: dict, out_path: Path):
 # ── Main ─────────────────────────────────────────────────────────────────────
 def main():
     schema_data = try_databricks_connection() or MOCK_SCHEMA
-    schema_data["generated_at"] = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+    schema_data["generated_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
     xl_path = OUTPUT_DIR / "healthcare_claims_schema.xlsx"
     md_path = OUTPUT_DIR / "healthcare_claims_schema.md"

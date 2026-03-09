@@ -3,7 +3,7 @@
 > **Catalog:** `hive_metastore`  **Schema:** `healthcare_claims`
 > 
 > **Source:** sample/demo data (no Databricks credentials found)
-> **Generated:** 2026-03-09 06:21:24 UTC
+> **Generated:** 2026-03-09 06:22:37 UTC
 > **Data Status:** ⚠️ Sample/Demo Data
 
 ---
@@ -372,4 +372,4 @@ Audit trail capturing every status change and adjudication event on a claim. Ena
 
 ---
 
-*Documentation generated automatically by the DataEngineer agent · 2026-03-09 06:21:24 UTC*
+*Documentation generated automatically by the DataEngineer agent · 2026-03-09 06:22:37 UTC*
