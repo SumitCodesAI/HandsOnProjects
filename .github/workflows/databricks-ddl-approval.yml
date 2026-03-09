@@ -1,0 +1,230 @@
+name: Databricks DDL Plan and Approval Execution
+
+on:
+  issues:
+    types: [assigned]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  plan-ddl:
+    if: github.event_name == 'issues' && github.event.action == 'assigned'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract Excel attachment URL
+        id: extract
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const body = (issue && issue.body) ? issue.body : '';
+
+            function extractExcelUrl(text) {
+              if (!text) return null;
+
+              const markdownLinks = [...text.matchAll(/\[[^\]]*\]\((https?:\/\/[^)\s]+)\)/gi)].map(m => m[1]);
+              for (const link of markdownLinks) {
+                if (/\.xlsx(\?|#|$)/i.test(link)) return link;
+              }
+
+              const directLinks = [...text.matchAll(/https?:\/\/\S+/gi)].map(m => m[0].replace(/[)>.,]$/, ''));
+              for (const link of directLinks) {
+                if (/\.xlsx(\?|#|$)/i.test(link)) return link;
+              }
+
+              return null;
+            }
+
+            const excelUrl = extractExcelUrl(body);
+            core.setOutput('issue_number', String(issue.number));
+            core.setOutput('excel_url', excelUrl || '');
+
+            if (!excelUrl) {
+              core.warning('No .xlsx attachment URL found in issue body');
+            }
+
+      - name: Comment if Excel missing
+        if: steps.extract.outputs.excel_url == ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: Number('${{ steps.extract.outputs.issue_number }}'),
+              body: [
+                '⚠️ I could not find an Excel attachment URL in the issue body.',
+                '',
+                'Please attach or paste an `.xlsx` link in the issue, then re-assign to run plan generation.'
+              ].join('\n')
+            });
+
+      - name: Stop when Excel missing
+        if: steps.extract.outputs.excel_url == ''
+        run: exit 0
+
+      - name: Set up Python
+        if: steps.extract.outputs.excel_url != ''
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        if: steps.extract.outputs.excel_url != ''
+        run: |
+          pip install requests pandas openpyxl
+
+      - name: Download Excel attachment
+        if: steps.extract.outputs.excel_url != ''
+        run: |
+          curl -fL "${{ steps.extract.outputs.excel_url }}" -o schema_changes.xlsx
+
+      - name: Generate DDL plan (no execution)
+        if: steps.extract.outputs.excel_url != ''
+        run: |
+          python scripts/databricks_ddl_executor.py schema_changes.xlsx
+
+      - name: Post plan for approval
+        if: steps.extract.outputs.excel_url != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const preview = fs.readFileSync('ddl_preview.md', 'utf8');
+            const body = [
+              preview,
+              '',
+              '---',
+              'To execute in Databricks, comment exactly: `approve`',
+              '',
+              '_Only repository OWNER/MEMBER/COLLABORATOR approvals are accepted._'
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: Number('${{ steps.extract.outputs.issue_number }}'),
+              body
+            });
+
+  execute-ddl:
+    if: github.event_name == 'issue_comment' && github.event.action == 'created' && github.event.issue.pull_request == null
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate approval and fetch issue Excel URL
+        id: gate
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const commentBody = (context.payload.comment?.body || '').trim();
+            const association = context.payload.comment?.author_association || 'NONE';
+            const allowedAssociations = ['OWNER', 'MEMBER', 'COLLABORATOR'];
+
+            const isApprove = /^approve$/i.test(commentBody);
+            if (!isApprove) {
+              core.setOutput('should_execute', 'false');
+              return;
+            }
+
+            if (!allowedAssociations.includes(association)) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: '⛔ Approval ignored. Only OWNER/MEMBER/COLLABORATOR can approve execution.'
+              });
+              core.setOutput('should_execute', 'false');
+              return;
+            }
+
+            const issueResp = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            const issueBody = issueResp.data?.body || '';
+
+            function extractExcelUrl(text) {
+              if (!text) return null;
+
+              const markdownLinks = [...text.matchAll(/\[[^\]]*\]\((https?:\/\/[^)\s]+)\)/gi)].map(m => m[1]);
+              for (const link of markdownLinks) {
+                if (/\.xlsx(\?|#|$)/i.test(link)) return link;
+              }
+
+              const directLinks = [...text.matchAll(/https?:\/\/\S+/gi)].map(m => m[0].replace(/[)>.,]$/, ''));
+              for (const link of directLinks) {
+                if (/\.xlsx(\?|#|$)/i.test(link)) return link;
+              }
+
+              return null;
+            }
+
+            const excelUrl = extractExcelUrl(issueBody);
+            if (!excelUrl) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: '⚠️ Approved, but no `.xlsx` attachment URL found in issue body. Add the Excel link and comment `approve` again.'
+              });
+              core.setOutput('should_execute', 'false');
+              return;
+            }
+
+            core.setOutput('should_execute', 'true');
+            core.setOutput('excel_url', excelUrl);
+            core.setOutput('issue_number', String(context.issue.number));
+
+      - name: Checkout repository
+        if: steps.gate.outputs.should_execute == 'true'
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        if: steps.gate.outputs.should_execute == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        if: steps.gate.outputs.should_execute == 'true'
+        run: |
+          pip install requests pandas openpyxl
+
+      - name: Download Excel attachment
+        if: steps.gate.outputs.should_execute == 'true'
+        run: |
+          curl -fL "${{ steps.gate.outputs.excel_url }}" -o schema_changes.xlsx
+
+      - name: Execute approved DDL in Databricks
+        if: steps.gate.outputs.should_execute == 'true'
+        env:
+          DATABRICKS_HOST: ${{ secrets['DATABRICKS_HOST'] || vars['DATABRICKS_HOST'] }}
+          DATABRICKS_TOKEN: ${{ secrets['DATABRICKS_TOKEN'] || vars['DATABRICKS_TOKEN'] }}
+        run: |
+          python scripts/databricks_ddl_executor.py schema_changes.xlsx --execute --approve-token APPROVE_DATABRICKS_DDL
+
+      - name: Post execution results
+        if: steps.gate.outputs.should_execute == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const results = fs.readFileSync('ddl_results.md', 'utf8');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: Number('${{ steps.gate.outputs.issue_number }}'),
+              body: results
+            });

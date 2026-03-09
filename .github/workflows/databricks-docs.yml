@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   generate-docs:
+    if: contains(github.event.issue.title, 'schema') || contains(github.event.issue.title, 'Schema') || contains(github.event.issue.body, 'schema') || contains(github.event.issue.body, 'Schema')
     runs-on: ubuntu-latest
     
     steps:
