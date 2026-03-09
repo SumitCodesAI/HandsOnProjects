@@ -8,7 +8,7 @@ on:
         required: true
         default: 'workspace'
       schema:
-        description: 'Schema name'
+        description: 'Schema name (e.g., healthcare_claims, default)'
         required: true
         default: 'healthcare_claims'
       format:

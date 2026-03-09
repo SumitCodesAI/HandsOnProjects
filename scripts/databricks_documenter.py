@@ -240,8 +240,8 @@ class DatabricksDocumenter:
 def main():
     parser = argparse.ArgumentParser(description='Generate Databricks schema documentation')
     
-    parser.add_argument('--catalog', '-c', required=True, help='Catalog name')
-    parser.add_argument('--schema', '-s', required=True, help='Schema name')
+    parser.add_argument('--catalog', '-c', default='workspace', help='Catalog name (default: workspace)')
+    parser.add_argument('--schema', '-s', required=True, help='Schema name (e.g., healthcare_claims, default)')
     parser.add_argument('--format', '-f', choices=['excel', 'markdown', 'both'], 
                         default='both', help='Output format')
     parser.add_argument('--output-dir', '-o', default='docs/databricks', 
@@ -249,15 +249,10 @@ def main():
     
     args = parser.parse_args()
     
-    # Strict validation - schema and catalog are required
+    # Strict validation - schema is required
     if not args.schema or args.schema.strip() == '':
         print("❌ FATAL: Schema name is empty or missing!")
         print("   Ensure your issue contains: schema: your_schema_name")
-        return 1
-    
-    if not args.catalog or args.catalog.strip() == '':
-        print("❌ FATAL: Catalog name is empty or missing!")
-        print("   Ensure your issue contains: catalog: your_catalog (default: workspace)")
         return 1
     
     host = os.environ.get('DATABRICKS_HOST')
