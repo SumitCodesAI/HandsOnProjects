@@ -22,17 +22,54 @@ on:
           - markdown
   
   issues:
-    types: [labeled]
+    types: [opened, edited, assigned]
 
 jobs:
   generate-docs:
-    # Only run if issue has 'databricks-docs' label
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.issue.labels.*.name, 'databricks-docs')
+    # Run on manual workflow dispatch OR when issue mentions DataEngineer
+    if: |
+      github.event_name == 'workflow_dispatch' || 
+      (github.event_name == 'issues' && (
+        contains(github.event.issue.body, '@DataEngineer') ||
+        contains(github.event.issue.title, 'DataEngineer')
+      ))
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      
+      - name: Extract schema from issue
+        if: github.event_name == 'issues'
+        id: extract
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const body = issue.body || '';
+            const title = issue.title || '';
+            
+            // Look for schema name patterns in issue body/title
+            // Pattern 1: "schema: healthcare_claims" or "schema=healthcare_claims"
+            let schemaMatch = body.match(/schema[:\s=]+([a-z_]+)/i) || title.match(/schema[:\s=]+([a-z_]+)/i);
+            
+            // Pattern 2: "document healthcare_claims" or "generate docs for healthcare_claims"  
+            if (!schemaMatch) {
+              schemaMatch = body.match(/(?:document|generate|create docs for)\s+([a-z_]+)/i) || 
+                           title.match(/(?:document|generate|create docs for)\s+([a-z_]+)/i);
+            }
+            
+            const schema = schemaMatch ? schemaMatch[1] : 'healthcare_claims';
+            
+            // Look for catalog (default to workspace)
+            const catalogMatch = body.match(/catalog[:\s=]+([a-z_]+)/i);
+            const catalog = catalogMatch ? catalogMatch[1] : 'workspace';
+            
+            console.log(`Extracted: catalog=${catalog}, schema=${schema}`);
+            
+            core.setOutput('catalog', catalog);
+            core.setOutput('schema', schema);
+            core.setOutput('issue_number', issue.number);
       
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -48,9 +85,15 @@ jobs:
           DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
         run: |
-          CATALOG="${{ github.event.inputs.catalog || 'workspace' }}"
-          SCHEMA="${{ github.event.inputs.schema || 'healthcare_claims' }}"
-          FORMAT="${{ github.event.inputs.format || 'both' }}"
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            CATALOG="${{ github.event.inputs.catalog || 'workspace' }}"
+            SCHEMA="${{ github.event.inputs.schema || 'healthcare_claims' }}"
+            FORMAT="${{ github.event.inputs.format || 'both' }}"
+          else
+            CATALOG="${{ steps.extract.outputs.catalog || 'workspace' }}"
+            SCHEMA="${{ steps.extract.outputs.schema || 'healthcare_claims' }}"
+            FORMAT="both"
+          fi
           
           echo "Generating $FORMAT documentation for $CATALOG.$SCHEMA"
           python scripts/databricks_documenter.py --catalog "$CATALOG" --schema "$SCHEMA" --format "$FORMAT"
@@ -60,7 +103,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/databricks/
-          git commit -m "docs: update schema documentation for ${{ github.event.inputs.schema || 'healthcare_claims' }}" || echo "No changes to commit"
+          git commit -m "docs: add schema documentation for ${{ steps.extract.outputs.schema || github.event.inputs.schema }}" || echo "No changes to commit"
           git push
       
       - name: Comment on issue (if triggered by issue)
@@ -68,13 +111,14 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const schema = 'healthcare_claims';
+            const catalog = '${{ steps.extract.outputs.catalog }}';
+            const schema = '${{ steps.extract.outputs.schema }}';
             const excelFile = `docs/databricks/${schema}_schema_and_data.xlsx`;
             const mdFile = `docs/databricks/${schema}_SCHEMA.md`;
             
             github.rest.issues.createComment({
-              issue_number: context.issue.number,
+              issue_number: ${{ steps.extract.outputs.issue_number }},
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `✅ **Databricks schema documentation generated!**\n\n📊 **Schema:** workspace.${schema}\n\n📁 **Files:**\n- [📊 Excel Schema](${excelFile})\n- [📄 Markdown](${mdFile})\n\n**Note:** Schema definitions only (no sample data rows)`
+              body: `✅ **Databricks schema documentation generated automatically!**\n\n📊 **Schema:** ${catalog}.${schema}\n\n📁 **Files:**\n- [📊 Excel Schema](${excelFile})\n- [📄 Markdown](${mdFile})\n\n**Note:** Schema definitions only (no sample data rows)\n\n---\n*Triggered automatically by @DataEngineer agent*`
             });
