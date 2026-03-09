@@ -121,22 +121,39 @@ jobs:
             HOST="https://$HOST"
           fi
 
-          # Test Unity Catalog access directly — the same endpoint the script uses.
-          # Note: /api/2.0/current-user returns 403 for Service Principal / OAuth tokens
-          # even when the token has full Unity Catalog access, so we skip that check.
+          # Test Unity Catalog access — the same endpoint the script uses.
           UC_STATUS=$(curl -sS -o /tmp/dbx_uc_schemas.json -w "%{http_code}" \
             -H "Authorization: Bearer $DATABRICKS_TOKEN" \
             "$HOST/api/2.1/unity-catalog/schemas?catalog_name=workspace&max_results=1")
 
           echo "Unity Catalog /schemas probe returned HTTP $UC_STATUS"
+          UC_BODY=$(cat /tmp/dbx_uc_schemas.json 2>/dev/null || true)
+
           if [ "$UC_STATUS" == "000" ]; then
             echo "::error::Could not reach Databricks at $HOST. Verify DATABRICKS_HOST is correct (e.g. https://adb-xxxx.azuredatabricks.net)."
             exit 1
           fi
           if [ "$UC_STATUS" == "401" ]; then
-            echo "::error::Databricks token rejected (HTTP 401). Verify DATABRICKS_TOKEN is a valid Personal Access Token or Service Principal token."
-            head -c 500 /tmp/dbx_uc_schemas.json || true
+            echo "::error::Databricks token rejected (HTTP 401). DATABRICKS_TOKEN is invalid or expired. Generate a new token at $HOST → User Settings → Developer → Access tokens."
+            echo "$UC_BODY" | head -c 500 || true
             exit 1
+          fi
+          if [ "$UC_STATUS" == "403" ]; then
+            # Check if this is a scope error (token exists but lacks required permissions)
+            if echo "$UC_BODY" | grep -q "required scopes"; then
+              echo "::error::DATABRICKS_TOKEN is missing required API scopes. Databricks requires you to create a new token with the 'unity-catalog' scope enabled."
+              echo ""
+              echo "How to fix:"
+              echo "  1. Go to $HOST"
+              echo "  2. Click your profile → Settings → Developer → Access tokens"
+              echo "  3. Click 'Generate new token'"
+              echo "  4. In the token creation dialog, enable the scope: unity-catalog"
+              echo "  5. Copy the new token"
+              echo "  6. Update the DATABRICKS_TOKEN secret in: GitHub repo → Settings → Secrets and variables → Actions"
+              echo ""
+              echo "API response: $UC_BODY" | head -c 300 || true
+              exit 1
+            fi
           fi
 
           echo "Databricks connectivity verified (HTTP $UC_STATUS)."
