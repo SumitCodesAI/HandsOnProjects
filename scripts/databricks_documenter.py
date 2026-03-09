@@ -247,9 +247,15 @@ def main():
         return 1
     
     print(f"🚀 Databricks Schema Documentation Generator\n")
-    print(f"Catalog: {args.catalog}")
-    print(f"Schema: {args.schema}")
-    print(f"Format: {args.format}\n")
+    print(f"📌 Catalog: {args.catalog}")
+    print(f"📌 Schema: {args.schema}")
+    print(f"📌 Format: {args.format}")
+    print(f"📌 Host: {host}\n")
+    
+    # Validate schema name is not empty
+    if not args.schema or args.schema.strip() == '':
+        print("❌ Error: Schema name is empty. Provide --schema argument or schema in issue.")
+        return 1
     
     try:
         documenter = DatabricksDocumenter(host, token)
