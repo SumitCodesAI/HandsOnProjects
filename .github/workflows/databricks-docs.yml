@@ -1,30 +1,8 @@
 name: Generate Databricks Schema Documentation
 
 on:
-  workflow_dispatch:
-    inputs:
-      catalog:
-        description: 'Catalog name'
-        required: true
-        default: 'workspace'
-      schema:
-        description: 'Schema name (e.g., healthcare_claims, default)'
-        required: true
-        default: 'healthcare_claims'
-      format:
-        description: 'Output format'
-        required: true
-        default: 'both'
-        type: choice
-        options:
-          - both
-          - excel
-          - markdown
-  
   issues:
-    types: [opened, edited, assigned]
-  issue_comment:
-    types: [created, edited]
+    types: [assigned]
 
 permissions:
   contents: write
@@ -32,28 +10,19 @@ permissions:
 
 jobs:
   generate-docs:
-    # Run on manual workflow dispatch OR when issue mentions DataEngineer
-    if: |
-      github.event_name == 'workflow_dispatch' || 
-      (github.event_name == 'issues') ||
-      (github.event_name == 'issue_comment' && (
-        contains(github.event.comment.body, '@DataEngineer')
-      ))
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      - name: Extract schema from issue/comment
-        if: github.event_name == 'issues' || github.event_name == 'issue_comment'
+      - name: Extract schema from issue
         id: extract
         uses: actions/github-script@v7
         with:
           script: |
             const issue = context.payload.issue;
-            const commentBody = context.payload.comment?.body || '';
-            const body = issue && issue.body ? [commentBody, issue.body].filter(Boolean).join('\n') : commentBody;
+            const body = issue && issue.body ? issue.body : '';
             const title = issue && issue.title ? issue.title : '';
             const issueNumber = issue ? issue.number : 'unknown';
             
@@ -163,18 +132,10 @@ jobs:
           DATABRICKS_HOST: ${{ secrets['DATABRICKS_HOST'] || vars['DATABRICKS_HOST'] }}
           DATABRICKS_TOKEN: ${{ secrets['DATABRICKS_TOKEN'] || vars['DATABRICKS_TOKEN'] }}
         run: |
-          # Determine source of schema (dispatch inputs or issue extraction)
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            CATALOG="${{ github.event.inputs.catalog }}"
-            SCHEMA="${{ github.event.inputs.schema }}"
-            FORMAT="${{ github.event.inputs.format }}"
-            echo "📋 Using workflow dispatch inputs: $CATALOG.$SCHEMA"
-          else
-            CATALOG="${{ steps.extract.outputs.catalog }}"
-            SCHEMA="${{ steps.extract.outputs.schema }}"
-            FORMAT="both"
-            echo "📋 Using extracted schema from issue: $CATALOG.$SCHEMA"
-          fi
+          CATALOG="${{ steps.extract.outputs.catalog }}"
+          SCHEMA="${{ steps.extract.outputs.schema }}"
+          FORMAT="both"
+          echo "📋 Using extracted schema from issue: $CATALOG.$SCHEMA"
           
           # Validate schema was extracted
           if [ -z "$SCHEMA" ] || [ "$SCHEMA" == ""  ]; then
@@ -197,11 +158,10 @@ jobs:
           fi
           
           git add docs/databricks/
-          git commit -m "docs: add schema documentation for ${{ steps.extract.outputs.schema || github.event.inputs.schema }}" || echo "No changes to commit"
+          git commit -m "docs: add schema documentation for ${{ steps.extract.outputs.schema }}" || echo "No changes to commit"
           git push
       
-      - name: Comment on issue (if triggered by issue)
-        if: github.event_name == 'issues'
+      - name: Comment on issue
         uses: actions/github-script@v7
         with:
           script: |
