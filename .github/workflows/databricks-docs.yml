@@ -32,13 +32,17 @@ permissions:
 
 jobs:
   generate-docs:
-    # Run on manual workflow dispatch OR when issue mentions DataEngineer
+    # Run on manual workflow dispatch OR when issue mentions DataEngineer or requests schema documentation
     if: |
       github.event_name == 'workflow_dispatch' || 
       (github.event_name == 'issues' && (
         github.event.action == 'assigned' ||
         contains(github.event.issue.body, '@DataEngineer') ||
-        contains(github.event.issue.title, 'DataEngineer')
+        contains(toLower(github.event.issue.title), 'dataengineer') ||
+        contains(toLower(github.event.issue.title), 'data engineer') ||
+        contains(toLower(github.event.issue.body), 'schema:') ||
+        contains(toLower(github.event.issue.body), 'document schema') ||
+        contains(toLower(github.event.issue.body), 'create document')
       )) ||
       (github.event_name == 'issue_comment' && (
         contains(github.event.comment.body, '@DataEngineer')
