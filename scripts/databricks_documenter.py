@@ -38,16 +38,27 @@ class DatabricksDocumenter:
         return normalized
     
     def list_tables(self, catalog: str, schema: str) -> List[Dict]:
-        """List all tables in a schema"""
+        """List all tables in a schema, handling API pagination automatically."""
         url = f"{self.host}/api/2.1/unity-catalog/tables"
-        params = {"catalog_name": catalog, "schema_name": schema}
         
         print(f"📡 Fetching tables from {catalog}.{schema}...")
         print(f"   URL: {url}?catalog_name={catalog}&schema_name={schema}")
-        response = requests.get(url, headers=self.headers, params=params, timeout=30)
-        response.raise_for_status()
-        
-        tables = response.json().get('tables', [])
+
+        tables: List[Dict] = []
+        params: Dict = {"catalog_name": catalog, "schema_name": schema, "max_results": 200}
+
+        while True:
+            response = requests.get(url, headers=self.headers, params=params, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+            page_tables = data.get('tables', [])
+            tables.extend(page_tables)
+
+            next_page_token = data.get('next_page_token')
+            if not next_page_token:
+                break
+            params = {"page_token": next_page_token}
+
         print(f"✅ Found {len(tables)} tables")
         
         if not tables:
@@ -70,14 +81,14 @@ class DatabricksDocumenter:
         return response.json()
     
     def generate_excel_documentation(self, catalog: str, schema: str, output_dir: str = "docs/databricks"):
-        """Generate Excel file with schema info"""
+        """Generate Excel file with schema info. Returns output path or raises SystemExit on failure."""
         os.makedirs(output_dir, exist_ok=True)
         
         tables = self.list_tables(catalog, schema)
         if not tables:
             print(f"\n❌ ERROR: No tables found in {catalog}.{schema} - cannot generate documentation.")
-            print(f"Please verify the schema exists and contains tables.")
-            return None
+            print(f"Please verify the catalog/schema names exist and your token has SELECT privilege on them.")
+            raise SystemExit(1)
         
         excel_filename = f"{output_dir}/{schema}_schema_and_data.xlsx"
         
@@ -150,13 +161,14 @@ class DatabricksDocumenter:
         return excel_filename
     
     def generate_markdown_documentation(self, catalog: str, schema: str, output_dir: str = "docs/databricks"):
-        """Generate Markdown documentation"""
+        """Generate Markdown documentation. Raises SystemExit on failure."""
         os.makedirs(output_dir, exist_ok=True)
         
         tables = self.list_tables(catalog, schema)
         if not tables:
-            print(f"No tables found in {catalog}.{schema}")
-            return
+            print(f"\n❌ ERROR: No tables found in {catalog}.{schema} - cannot generate documentation.")
+            print(f"Please verify the catalog/schema names exist and your token has SELECT privilege on them.")
+            raise SystemExit(1)
         
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         output_file = f"{output_dir}/{schema}_SCHEMA.md"
