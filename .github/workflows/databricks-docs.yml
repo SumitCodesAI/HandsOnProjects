@@ -35,11 +35,7 @@ jobs:
     # Run on manual workflow dispatch OR when issue mentions DataEngineer
     if: |
       github.event_name == 'workflow_dispatch' || 
-      (github.event_name == 'issues' && (
-        github.event.action == 'assigned' ||
-        contains(github.event.issue.body, '@DataEngineer') ||
-        contains(github.event.issue.title, 'DataEngineer')
-      )) ||
+      (github.event_name == 'issues') ||
       (github.event_name == 'issue_comment' && (
         contains(github.event.comment.body, '@DataEngineer')
       ))
@@ -76,10 +72,10 @@ jobs:
             }
             
             if (!schemaMatch) {
-              console.log('⚠️  WARNING: Could not extract schema name from issue. Using default: healthcare_claims');
+              console.log('⚠️  WARNING: Could not extract schema name from issue/comment text.');
             }
             
-            const schema = schemaMatch ? schemaMatch[1] : 'healthcare_claims';
+            const schema = schemaMatch ? schemaMatch[1] : '';
             
             // Look for catalog (support alphanumeric, underscores, hyphens)
             const catalogMatch = body.match(/catalog[:\s=]+([a-zA-Z0-9_-]+)/i);
