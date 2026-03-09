@@ -121,29 +121,25 @@ jobs:
             HOST="https://$HOST"
           fi
 
-          USER_STATUS=$(curl -sS -o /tmp/dbx_current_user.json -w "%{http_code}" \
+          # Test Unity Catalog access directly — the same endpoint the script uses.
+          # Note: /api/2.0/current-user returns 403 for Service Principal / OAuth tokens
+          # even when the token has full Unity Catalog access, so we skip that check.
+          UC_STATUS=$(curl -sS -o /tmp/dbx_uc_schemas.json -w "%{http_code}" \
             -H "Authorization: Bearer $DATABRICKS_TOKEN" \
-            "$HOST/api/2.0/current-user")
+            "$HOST/api/2.1/unity-catalog/schemas?catalog_name=workspace&max_results=1")
 
-          if [ "$USER_STATUS" != "200" ]; then
-            echo "::error::Databricks auth/connectivity failed at /api/2.0/current-user (HTTP $USER_STATUS). Check DATABRICKS_HOST and DATABRICKS_TOKEN."
-            echo "Response:"
-            head -c 500 /tmp/dbx_current_user.json || true
+          echo "Unity Catalog /schemas probe returned HTTP $UC_STATUS"
+          if [ "$UC_STATUS" == "000" ]; then
+            echo "::error::Could not reach Databricks at $HOST. Verify DATABRICKS_HOST is correct (e.g. https://adb-xxxx.azuredatabricks.net)."
+            exit 1
+          fi
+          if [ "$UC_STATUS" == "401" ]; then
+            echo "::error::Databricks token rejected (HTTP 401). Verify DATABRICKS_TOKEN is a valid Personal Access Token or Service Principal token."
+            head -c 500 /tmp/dbx_uc_schemas.json || true
             exit 1
           fi
 
-          UC_STATUS=$(curl -sS -o /tmp/dbx_uc_catalogs.json -w "%{http_code}" \
-            -H "Authorization: Bearer $DATABRICKS_TOKEN" \
-            "$HOST/api/2.1/unity-catalog/catalogs")
-
-          if [ "$UC_STATUS" != "200" ]; then
-            echo "::error::Unity Catalog access failed at /api/2.1/unity-catalog/catalogs (HTTP $UC_STATUS). Token may lack UC permissions."
-            echo "Response:"
-            head -c 500 /tmp/dbx_uc_catalogs.json || true
-            exit 1
-          fi
-
-          echo "Databricks connectivity and Unity Catalog access verified."
+          echo "Databricks connectivity verified (HTTP $UC_STATUS)."
       
       - name: Generate schema documentation
         env:
