@@ -17,7 +17,7 @@ import os
 import argparse
 from typing import Dict, List
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib.parse import quote
 
 
@@ -36,6 +36,16 @@ class DatabricksDocumenter:
         if not normalized.startswith("http://") and not normalized.startswith("https://"):
             normalized = f"https://{normalized}"
         return normalized
+
+    @staticmethod
+    def _format_timestamp(ts) -> str:
+        """Convert a Databricks timestamp (int ms or ISO string) to a YYYY-MM-DD string."""
+        if ts is None:
+            return "N/A"
+        if isinstance(ts, int):
+            return datetime.fromtimestamp(ts / 1000, tz=timezone.utc).strftime("%Y-%m-%d")
+        # Already a string (ISO format)
+        return str(ts)[:10]
     
     def list_tables(self, catalog: str, schema: str) -> List[Dict]:
         """List all tables in a schema, handling API pagination automatically."""
@@ -106,7 +116,7 @@ class DatabricksDocumenter:
                 columns = schema_details.get("columns", [])
                 
                 created_at = schema_details.get("created_at")
-                created_str = created_at[:10] if created_at else "N/A"
+                created_str = self._format_timestamp(created_at)
                 
                 summary_data.append({
                     "Table Name": table_name,
@@ -206,7 +216,7 @@ class DatabricksDocumenter:
                     
                     created_at = schema_details.get("created_at")
                     if created_at:
-                        f.write(f"**Created:** {created_at[:10]}  \n")
+                        f.write(f"**Created:** {self._format_timestamp(created_at)}  \n")
                     
                     f.write(f"\n")
                     
@@ -229,9 +239,15 @@ class DatabricksDocumenter:
                         f.write(f"**Storage:** `{storage_location}`\n\n")
                     
                     properties = schema_details.get("properties", {})
-                    if properties:
+                    # Filter out noisy internal Spark statistics and Delta internal keys
+                    user_properties = {
+                        k: v for k, v in properties.items()
+                        if not k.startswith("spark.sql.statistics")
+                        and not k.startswith("delta.")
+                    }
+                    if user_properties:
                         f.write(f"**Properties:**\n")
-                        for key, value in properties.items():
+                        for key, value in user_properties.items():
                             f.write(f"- `{key}`: {value}\n")
                         f.write(f"\n")
                     
