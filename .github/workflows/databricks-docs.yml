@@ -104,6 +104,40 @@ jobs:
             exit 1
           fi
           echo "Databricks configuration found."
+
+      - name: Test Databricks connectivity
+        env:
+          DATABRICKS_HOST: ${{ secrets['DATABRICKS_HOST'] || vars['DATABRICKS_HOST'] }}
+          DATABRICKS_TOKEN: ${{ secrets['DATABRICKS_TOKEN'] || vars['DATABRICKS_TOKEN'] }}
+        run: |
+          HOST="${DATABRICKS_HOST%/}"
+          if [[ "$HOST" != http://* && "$HOST" != https://* ]]; then
+            HOST="https://$HOST"
+          fi
+
+          USER_STATUS=$(curl -sS -o /tmp/dbx_current_user.json -w "%{http_code}" \
+            -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+            "$HOST/api/2.0/current-user")
+
+          if [ "$USER_STATUS" != "200" ]; then
+            echo "::error::Databricks auth/connectivity failed at /api/2.0/current-user (HTTP $USER_STATUS). Check DATABRICKS_HOST and DATABRICKS_TOKEN."
+            echo "Response:"
+            head -c 500 /tmp/dbx_current_user.json || true
+            exit 1
+          fi
+
+          UC_STATUS=$(curl -sS -o /tmp/dbx_uc_catalogs.json -w "%{http_code}" \
+            -H "Authorization: Bearer $DATABRICKS_TOKEN" \
+            "$HOST/api/2.1/unity-catalog/catalogs")
+
+          if [ "$UC_STATUS" != "200" ]; then
+            echo "::error::Unity Catalog access failed at /api/2.1/unity-catalog/catalogs (HTTP $UC_STATUS). Token may lack UC permissions."
+            echo "Response:"
+            head -c 500 /tmp/dbx_uc_catalogs.json || true
+            exit 1
+          fi
+
+          echo "Databricks connectivity and Unity Catalog access verified."
       
       - name: Generate schema documentation
         env:
