@@ -1,4 +1,3 @@
-````chatagent
 ---
 name: DataEngineer
 description: Automatically generates Databricks schema documentation
@@ -42,5 +41,3 @@ Files: [Excel](docs/databricks/...) | [Markdown](docs/databricks/...)
 - Answer questions about existing schemas (read from `docs/databricks/`)
 - Analyze table structures and relationships
 - Format table details in markdown tables
-
-````
