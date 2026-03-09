@@ -123,7 +123,16 @@ def build_alter_statement(table: str, column: str, datatype: str, default_value)
     return stmt
 
 
-def build_plan_from_excel(excel_path: str) -> List[Dict]:
+def qualify_table_name(table: str, default_catalog: Optional[str]) -> str:
+    """Prepend default_catalog to a 2-part (schema.table) name if catalog is not already present."""
+    if default_catalog and table.count('.') == 1:
+        if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', default_catalog):
+            raise ValueError(f"Invalid catalog name: {default_catalog}")
+        return f"{default_catalog}.{table}"
+    return table
+
+
+def build_plan_from_excel(excel_path: str, default_catalog: Optional[str] = None) -> List[Dict]:
     """
     Build ALTER TABLE plan from Excel without executing.
 
@@ -132,6 +141,8 @@ def build_plan_from_excel(excel_path: str) -> List[Dict]:
     - Column C (index 2): Column name
     - Column D (index 3): Datatype
     - Column E (index 4): Default value (optional)
+
+    If default_catalog is provided, it is prepended to any 2-part (schema.table) table names.
     """
     df = pd.read_excel(excel_path, sheet_name=0)
 
@@ -148,7 +159,7 @@ def build_plan_from_excel(excel_path: str) -> List[Dict]:
         if pd.isna(table) or pd.isna(column) or pd.isna(datatype):
             continue
 
-        table = str(table).strip()
+        table = qualify_table_name(str(table).strip(), default_catalog)
         column = str(column).strip()
         datatype = str(datatype).strip()
 
@@ -368,7 +379,7 @@ def format_results(results: List[Dict]) -> str:
 def main():
     """Main execution flow"""
     if len(sys.argv) < 2:
-        print("Usage: python databricks_ddl_executor.py <excel_file> [--execute --approve-token <token>]")
+        print("Usage: python databricks_ddl_executor.py <excel_file> [--execute --approve-token <token>] [--default-catalog <catalog>]")
         sys.exit(1)
     
     excel_file = sys.argv[1]
@@ -379,6 +390,15 @@ def main():
         token_index = sys.argv.index("--approve-token")
         if token_index + 1 < len(sys.argv):
             provided_token = sys.argv[token_index + 1]
+
+    default_catalog = None
+    if "--default-catalog" in sys.argv:
+        catalog_index = sys.argv.index("--default-catalog")
+        if catalog_index + 1 < len(sys.argv):
+            default_catalog = sys.argv[catalog_index + 1]
+            if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', default_catalog):
+                print(f"Error: Invalid catalog name '{default_catalog}'. Must start with a letter/underscore and contain only alphanumeric characters and underscores.")
+                sys.exit(1)
     
     if not os.path.exists(excel_file):
         print(f"Error: Excel file not found: {excel_file}")
@@ -390,11 +410,13 @@ def main():
     print(f"Host: {DATABRICKS_HOST}")
     print(f"Excel: {excel_file}")
     print(f"Mode: {'EXECUTE' if execute_mode else 'PLAN'}")
+    if default_catalog:
+        print(f"Default Catalog: {default_catalog}")
     print()
     
     try:
         print("Generating DDL plan from Excel...")
-        plan = build_plan_from_excel(excel_file)
+        plan = build_plan_from_excel(excel_file, default_catalog)
         write_plan_outputs(plan)
         print("✓ Plan files generated: alter_statements.sql, ddl_preview.md\n")
 
