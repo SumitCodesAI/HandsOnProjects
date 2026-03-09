@@ -106,21 +106,24 @@ def sanitize_default(value, datatype: str) -> Optional[str]:
     return value_str
 
 
-def build_alter_statement(table: str, column: str, datatype: str, default_value) -> str:
-    """Build ALTER TABLE ADD COLUMN SQL statement"""
+def build_alter_statement(table: str, column: str, datatype: str, default_value) -> tuple:
+    """Build ALTER TABLE ADD COLUMN and optional UPDATE statements"""
     if not validate_table(table):
         raise ValueError(f"Invalid table name: {table}")
     if not validate_column(column):
         raise ValueError(f"Invalid column name: {column}")
     
-    stmt = f"ALTER TABLE {table} ADD COLUMN {column} {datatype}"
+    # ALTER TABLE without DEFAULT constraint (not supported in Delta)
+    alter_stmt = f"ALTER TABLE {table} ADD COLUMN {column} {datatype}"
     
+    # If default value provided, generate UPDATE statement
+    update_stmt = None
     if default_value is not None:
         sanitized = sanitize_default(default_value, datatype)
         if sanitized:
-            stmt += f" DEFAULT {sanitized}"
+            update_stmt = f"UPDATE {table} SET {column} = {sanitized} WHERE {column} IS NULL"
     
-    return stmt
+    return alter_stmt, update_stmt
 
 
 def build_plan_from_excel(excel_path: str) -> List[Dict]:
@@ -153,13 +156,14 @@ def build_plan_from_excel(excel_path: str) -> List[Dict]:
         datatype = str(datatype).strip()
 
         try:
-            sql = build_alter_statement(table, column, datatype, default_value)
+            alter_sql, update_sql = build_alter_statement(table, column, datatype, default_value)
             plan.append(
                 {
                     "table": table,
                     "column": column,
                     "datatype": datatype,
-                    "sql": sql,
+                    "alter_sql": alter_sql,
+                    "update_sql": update_sql,
                     "valid": True,
                 }
             )
@@ -184,7 +188,9 @@ def write_plan_outputs(plan: List[Dict], sql_file: str = "alter_statements.sql",
 
     with open(sql_file, "w", encoding="utf-8") as f:
         for item in valid_items:
-            f.write(item["sql"] + ";\n")
+            f.write(item["alter_sql"] + ";\n")
+            if item.get("update_sql"):
+                f.write(item["update_sql"] + ";\n")
 
     preview = "## 📝 DDL Plan Generated (No Execution Yet)\n\n"
     preview += "Execution is blocked until explicit approval is provided.\n\n"
@@ -229,26 +235,44 @@ def execute_plan(plan: List[Dict], warehouse_id: str) -> List[Dict]:
             continue
 
         try:
-            result = execute_ddl(warehouse_id, item["sql"])
-            if result["success"]:
-                results.append(
-                    {
-                        "table": item["table"],
-                        "column": item["column"],
-                        "datatype": item["datatype"],
-                        "status": "SUCCESS",
-                    }
-                )
-            else:
+            # Execute ALTER TABLE
+            alter_result = execute_ddl(warehouse_id, item["alter_sql"])
+            if not alter_result["success"]:
                 results.append(
                     {
                         "table": item["table"],
                         "column": item["column"],
                         "datatype": item["datatype"],
                         "status": "FAILED",
-                        "error": result["error"],
+                        "error": f"ALTER failed: {alter_result['error']}",
                     }
                 )
+                continue
+            
+            # Execute UPDATE if default value provided
+            if item.get("update_sql"):
+                update_result = execute_ddl(warehouse_id, item["update_sql"])
+                if not update_result["success"]:
+                    results.append(
+                        {
+                            "table": item["table"],
+                            "column": item["column"],
+                            "datatype": item["datatype"],
+                            "status": "PARTIAL",
+                            "error": f"Column added but UPDATE failed: {update_result['error']}",
+                        }
+                    )
+                    continue
+            
+            # Both succeeded
+            results.append(
+                {
+                    "table": item["table"],
+                    "column": item["column"],
+                    "datatype": item["datatype"],
+                    "status": "SUCCESS",
+                }
+            )
         except Exception as e:
             results.append(
                 {
@@ -328,9 +352,10 @@ def process_excel(excel_path: str, warehouse_id: str) -> List[Dict]:
 def format_results(results: List[Dict]) -> str:
     """Format results for GitHub issue comment"""
     success_count = sum(1 for r in results if r['status'] == 'SUCCESS')
-    failed_count = len(results) - success_count
+    partial_count = sum(1 for r in results if r['status'] == 'PARTIAL')
+    failed_count = len(results) - success_count - partial_count
 
-    all_success = len(results) > 0 and failed_count == 0
+    all_success = len(results) > 0 and failed_count == 0 and partial_count == 0
     if all_success:
         output = f"## ✅ Databricks DDL Execution Successful\n\n"
         output += "All requested table alterations were applied successfully.\n\n"
@@ -343,7 +368,17 @@ def format_results(results: List[Dict]) -> str:
     output += f"- Overall status: {'SUCCESS' if all_success else 'PARTIAL_OR_FAILED'}\n"
     output += f"- Total operations: {len(results)}\n"
     output += f"- ✅ Successful: {success_count}\n"
+    output += f"- ⚠️ Partial: {partial_count}\n"
     output += f"- ❌ Failed: {failed_count}\n\n"
+    
+    if partial_count > 0:
+        output += "### ⚠️ Partial Operations\n"
+        output += "| Table | Column | Issue |\n"
+        output += "|-------|--------|-------|\n"
+        for r in results:
+            if r['status'] == 'PARTIAL':
+                output += f"| {r['table']} | {r['column']} | {r.get('error', 'Unknown')} |\n"
+        output += "\n"
     
     if failed_count > 0:
         output += "### ❌ Failed Operations\n"
