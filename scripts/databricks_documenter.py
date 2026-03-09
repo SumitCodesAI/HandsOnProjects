@@ -18,16 +18,24 @@ import argparse
 from typing import Dict, List
 import pandas as pd
 from datetime import datetime
+from urllib.parse import quote
 
 
 class DatabricksDocumenter:
     def __init__(self, host: str, token: str):
-        self.host = host.rstrip('/')
+        self.host = self._normalize_host(host)
         self.token = token
         self.headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
         }
+
+    @staticmethod
+    def _normalize_host(host: str) -> str:
+        normalized = host.strip().rstrip('/')
+        if not normalized.startswith("http://") and not normalized.startswith("https://"):
+            normalized = f"https://{normalized}"
+        return normalized
     
     def list_tables(self, catalog: str, schema: str) -> List[Dict]:
         """List all tables in a schema"""
@@ -35,7 +43,7 @@ class DatabricksDocumenter:
         params = {"catalog_name": catalog, "schema_name": schema}
         
         print(f"📡 Fetching tables from {catalog}.{schema}...")
-        response = requests.get(url, headers=self.headers, params=params)
+        response = requests.get(url, headers=self.headers, params=params, timeout=30)
         response.raise_for_status()
         
         tables = response.json().get('tables', [])
@@ -44,10 +52,11 @@ class DatabricksDocumenter:
     
     def get_table_schema(self, catalog: str, schema: str, table: str) -> Dict:
         """Get detailed schema for a table"""
-        url = f"{self.host}/api/2.1/unity-catalog/tables/{catalog}.{schema}.{table}"
+        full_table_name = quote(f"{catalog}.{schema}.{table}", safe='.')
+        url = f"{self.host}/api/2.1/unity-catalog/tables/{full_table_name}"
         
         print(f"  📋 Getting schema for {table}...")
-        response = requests.get(url, headers=self.headers)
+        response = requests.get(url, headers=self.headers, timeout=30)
         response.raise_for_status()
         return response.json()
     
@@ -234,7 +243,7 @@ def main():
     token = os.environ.get('DATABRICKS_TOKEN')
     
     if not host or not token:
-        print("❌ Error: DATABRICKS_HOST and DATABRICKS_TOKEN must be set")
+        print("❌ Error: DATABRICKS_HOST and DATABRICKS_TOKEN must be set (GitHub Actions Secrets or Variables)")
         return 1
     
     print(f"🚀 Databricks Schema Documentation Generator\n")
@@ -256,6 +265,9 @@ def main():
         
     except requests.HTTPError as e:
         print(f"\n❌ HTTP Error: {e}")
+        response_text = e.response.text if e.response is not None else ""
+        if response_text:
+            print(f"   → Response: {response_text[:500]}")
         if e.response.status_code == 401:
             print("   → Token invalid or expired")
         elif e.response.status_code == 403:

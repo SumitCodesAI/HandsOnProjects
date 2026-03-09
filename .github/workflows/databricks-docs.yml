@@ -24,6 +24,10 @@ on:
   issues:
     types: [opened, edited, assigned]
 
+permissions:
+  contents: write
+  issues: write
+
 jobs:
   generate-docs:
     # Run on manual workflow dispatch OR when issue mentions DataEngineer
@@ -79,11 +83,26 @@ jobs:
       - name: Install dependencies
         run: |
           pip install requests pandas openpyxl
+
+      - name: Validate Databricks configuration
+        env:
+          DATABRICKS_HOST: ${{ secrets['DATABRICKS_HOST'] || vars['DATABRICKS_HOST'] }}
+          DATABRICKS_TOKEN: ${{ secrets['DATABRICKS_TOKEN'] || vars['DATABRICKS_TOKEN'] }}
+        run: |
+          if [ -z "$DATABRICKS_HOST" ]; then
+            echo "::error::DATABRICKS_HOST is not set. Add it in Repository Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          if [ -z "$DATABRICKS_TOKEN" ]; then
+            echo "::error::DATABRICKS_TOKEN is not set. Add it in Repository Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          echo "Databricks configuration found."
       
       - name: Generate schema documentation
         env:
-          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
-          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+          DATABRICKS_HOST: ${{ secrets['DATABRICKS_HOST'] || vars['DATABRICKS_HOST'] }}
+          DATABRICKS_TOKEN: ${{ secrets['DATABRICKS_TOKEN'] || vars['DATABRICKS_TOKEN'] }}
         run: |
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             CATALOG="${{ github.event.inputs.catalog || 'workspace' }}"
