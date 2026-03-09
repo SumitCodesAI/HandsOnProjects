@@ -10,7 +10,7 @@ on:
       schema:
         description: 'Schema name'
         required: true
-        default: 'healthcare_claims'
+        default: 'default'
       format:
         description: 'Output format'
         required: true
@@ -43,13 +43,32 @@ jobs:
         run: |
           pip install requests pandas openpyxl
       
+      - name: Determine schema from issue title
+        id: detect-schema
+        if: github.event_name == 'issues'
+        run: |
+          # Lowercase the title first so comparisons and patterns are case-insensitive
+          ISSUE_TITLE_LOWER=$(echo "${{ github.event.issue.title }}" | tr '[:upper:]' '[:lower:]')
+          # Extract schema name from patterns like "document the <schema> schema"
+          # or "document <schema>" or "generate docs for <schema>"
+          SCHEMA=$(echo "$ISSUE_TITLE_LOWER" | \
+            sed -E 's/.*document (the )?([a-z0-9_]+) schema.*/\2/' | \
+            sed -E 's/.*document (the )?([a-z0-9_]+).*/\2/' | \
+            sed -E 's/.*generate docs? for ([a-z0-9_]+).*/\1/')
+          # Fall back to 'default' if extraction fails or result is empty/same as lowercased title
+          if [ -z "$SCHEMA" ] || [ "$SCHEMA" = "$ISSUE_TITLE_LOWER" ]; then
+            SCHEMA="default"
+          fi
+          echo "schema=$SCHEMA" >> "$GITHUB_OUTPUT"
+          echo "Detected schema: $SCHEMA"
+      
       - name: Generate schema documentation
         env:
           DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
         run: |
           CATALOG="${{ github.event.inputs.catalog || 'workspace' }}"
-          SCHEMA="${{ github.event.inputs.schema || 'healthcare_claims' }}"
+          SCHEMA="${{ github.event.inputs.schema || steps.detect-schema.outputs.schema || 'default' }}"
           FORMAT="${{ github.event.inputs.format || 'both' }}"
           
           echo "Generating $FORMAT documentation for $CATALOG.$SCHEMA"
@@ -57,10 +76,11 @@ jobs:
       
       - name: Commit documentation
         run: |
+          SCHEMA="${{ github.event.inputs.schema || steps.detect-schema.outputs.schema || 'default' }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/databricks/
-          git commit -m "docs: update schema documentation for ${{ github.event.inputs.schema || 'healthcare_claims' }}" || echo "No changes to commit"
+          git commit -m "docs: update schema documentation for ${SCHEMA}" || echo "No changes to commit"
           git push
       
       - name: Comment on issue (if triggered by issue)
@@ -68,7 +88,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const schema = 'healthcare_claims';
+            const schema = '${{ steps.detect-schema.outputs.schema || 'default' }}';
             const excelFile = `docs/databricks/${schema}_schema_and_data.xlsx`;
             const mdFile = `docs/databricks/${schema}_SCHEMA.md`;
             
