@@ -11,6 +11,15 @@ on:
         description: 'Schema name'
         required: true
         default: 'healthcare_claims'
+      format:
+        description: 'Output format'
+        required: true
+        default: 'both'
+        type: choice
+        options:
+          - both
+          - excel
+          - markdown
   
   issues:
     types: [labeled]
@@ -32,19 +41,19 @@ jobs:
       
       - name: Install dependencies
         run: |
-          pip install requests
+          pip install requests pandas openpyxl
       
       - name: Generate schema documentation
         env:
           DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
           DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
         run: |
-          # Use inputs from workflow_dispatch or defaults from issue
           CATALOG="${{ github.event.inputs.catalog || 'workspace' }}"
           SCHEMA="${{ github.event.inputs.schema || 'healthcare_claims' }}"
+          FORMAT="${{ github.event.inputs.format || 'both' }}"
           
-          echo "Generating docs for $CATALOG.$SCHEMA"
-          python scripts/databricks_documenter.py --catalog "$CATALOG" --schema "$SCHEMA"
+          echo "Generating $FORMAT documentation for $CATALOG.$SCHEMA"
+          python scripts/databricks_documenter.py --catalog "$CATALOG" --schema "$SCHEMA" --format "$FORMAT"
       
       - name: Commit documentation
         run: |
@@ -59,13 +68,13 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const fs = require('fs');
             const schema = 'healthcare_claims';
-            const filePath = `docs/databricks/${schema}_SCHEMA.md`;
+            const excelFile = `docs/databricks/${schema}_schema_and_data.xlsx`;
+            const mdFile = `docs/databricks/${schema}_SCHEMA.md`;
             
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `✅ **Databricks schema documentation generated!**\n\n📊 Schema: workspace.${schema}\n📁 File: [${schema}_SCHEMA.md](${filePath})\n\nThe documentation has been committed to the repository.`
+              body: `✅ **Databricks schema documentation generated!**\n\n📊 **Schema:** workspace.${schema}\n\n📁 **Files:**\n- [📊 Excel Schema](${excelFile})\n- [📄 Markdown](${mdFile})\n\n**Note:** Schema definitions only (no sample data rows)`
             });
