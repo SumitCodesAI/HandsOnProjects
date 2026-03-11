@@ -1,7 +1,7 @@
 ---
 name: MCPEngineer
 description: Generates Databricks SQL plans from attached Excel and executes via Databricks MCP tools only after owner approval comment.
-model: GPT-5.3-Codex
+model: gpt-4-turbo
 ---
 
 # MCPEngineer Agent
