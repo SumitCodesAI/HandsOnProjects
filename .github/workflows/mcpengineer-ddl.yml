@@ -1,0 +1,250 @@
+name: MCPEngineer MCP DDL Flow
+
+on:
+  issues:
+    types: [assigned]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  generate-plan:
+    if: github.event_name == 'issues' && github.event.action == 'assigned'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract Excel attachment URL
+        id: extract
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const body = (issue && issue.body) ? issue.body : '';
+
+            function extractExcelUrl(text) {
+              if (!text) return '';
+
+              const markdownLinks = [...text.matchAll(/\[[^\]]*\]\((https?:\/\/[^)\s]+)\)/gi)].map(m => m[1]);
+              for (const link of markdownLinks) {
+                if (/\.xlsx(\?|#|$)/i.test(link)) return link;
+              }
+
+              const directLinks = [...text.matchAll(/https?:\/\/\S+/gi)].map(m => m[0].replace(/[)>.,]$/, ''));
+              for (const link of directLinks) {
+                if (/\.xlsx(\?|#|$)/i.test(link)) return link;
+              }
+
+              return '';
+            }
+
+            const excelUrl = extractExcelUrl(body);
+            core.setOutput('excel_url', excelUrl);
+            core.setOutput('issue_number', String(issue.number));
+
+      - name: Comment and stop when Excel is missing
+        if: steps.extract.outputs.excel_url == ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: Number('${{ steps.extract.outputs.issue_number }}'),
+              body: [
+                '⚠️ MCPEngineer could not find an `.xlsx` URL in the issue body.',
+                '',
+                'Please attach or paste an `.xlsx` link, then assign again.'
+              ].join('\n')
+            });
+
+      - name: Exit when Excel is missing
+        if: steps.extract.outputs.excel_url == ''
+        run: exit 0
+
+      - name: Set up Python
+        if: steps.extract.outputs.excel_url != ''
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        if: steps.extract.outputs.excel_url != ''
+        run: |
+          pip install pandas openpyxl
+
+      - name: Download Excel
+        if: steps.extract.outputs.excel_url != ''
+        run: |
+          curl -fL "${{ steps.extract.outputs.excel_url }}" -o mcp_input.xlsx
+
+      - name: Build MCP SQL plan
+        if: steps.extract.outputs.excel_url != ''
+        run: |
+          python scripts/mcp_excel_sql_planner.py --excel mcp_input.xlsx --out-sql mcp_alter_statements.sql --out-md mcp_plan_preview.md --out-json mcp_plan.json
+
+      - name: Post plan and approval instruction
+        if: steps.extract.outputs.excel_url != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const preview = fs.readFileSync('mcp_plan_preview.md', 'utf8');
+
+            const body = [
+              preview,
+              '',
+              '---',
+              'To execute using MCP, comment exactly: `approve`',
+              '_Only OWNER/MEMBER/COLLABORATOR approval is accepted._'
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: Number('${{ steps.extract.outputs.issue_number }}'),
+              body
+            });
+
+  execute-on-approve:
+    if: github.event_name == 'issue_comment' && github.event.action == 'created' && github.event.issue.pull_request == null
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate approval comment and issue eligibility
+        id: gate
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const commentBody = (context.payload.comment?.body || '').trim();
+            const authorAssociation = context.payload.comment?.author_association || 'NONE';
+            const allowedAssociations = ['OWNER', 'MEMBER', 'COLLABORATOR'];
+
+            if (!/^approve$/i.test(commentBody)) {
+              core.setOutput('should_execute', 'false');
+              return;
+            }
+
+            if (!allowedAssociations.includes(authorAssociation)) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: '⛔ Approval ignored. Only OWNER/MEMBER/COLLABORATOR can approve execution.'
+              });
+              core.setOutput('should_execute', 'false');
+              return;
+            }
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              per_page: 100
+            });
+
+            const hasMcpPlanComment = comments.some(c => (c.body || '').includes('## MCP DDL Plan (Preview Only)'));
+            if (!hasMcpPlanComment) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: '⚠️ No MCPEngineer plan was found on this issue. Assign issue first to generate plan, then comment `approve`.'
+              });
+              core.setOutput('should_execute', 'false');
+              return;
+            }
+
+            const issueResp = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const issueBody = issueResp.data?.body || '';
+
+            function extractExcelUrl(text) {
+              if (!text) return '';
+
+              const markdownLinks = [...text.matchAll(/\[[^\]]*\]\((https?:\/\/[^)\s]+)\)/gi)].map(m => m[1]);
+              for (const link of markdownLinks) {
+                if (/\.xlsx(\?|#|$)/i.test(link)) return link;
+              }
+
+              const directLinks = [...text.matchAll(/https?:\/\/\S+/gi)].map(m => m[0].replace(/[)>.,]$/, ''));
+              for (const link of directLinks) {
+                if (/\.xlsx(\?|#|$)/i.test(link)) return link;
+              }
+
+              return '';
+            }
+
+            const excelUrl = extractExcelUrl(issueBody);
+            if (!excelUrl) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: '⚠️ Approval received but no `.xlsx` URL found in issue body. Add Excel URL and comment `approve` again.'
+              });
+              core.setOutput('should_execute', 'false');
+              return;
+            }
+
+            core.setOutput('should_execute', 'true');
+            core.setOutput('excel_url', excelUrl);
+            core.setOutput('issue_number', String(context.issue.number));
+
+      - name: Checkout repository
+        if: steps.gate.outputs.should_execute == 'true'
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        if: steps.gate.outputs.should_execute == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        if: steps.gate.outputs.should_execute == 'true'
+        run: |
+          pip install requests pandas openpyxl
+
+      - name: Download Excel
+        if: steps.gate.outputs.should_execute == 'true'
+        run: |
+          curl -fL "${{ steps.gate.outputs.excel_url }}" -o mcp_input.xlsx
+
+      - name: Rebuild plan from Excel
+        if: steps.gate.outputs.should_execute == 'true'
+        run: |
+          python scripts/mcp_excel_sql_planner.py --excel mcp_input.xlsx --out-sql mcp_alter_statements.sql --out-md mcp_plan_preview.md --out-json mcp_plan.json
+
+      - name: Execute SQL via MCP endpoint
+        if: steps.gate.outputs.should_execute == 'true'
+        env:
+          DATABRICKS_MCP_URL: ${{ vars['DATABRICKS_MCP_URL'] }}
+          COPILOT_MCP_DATABRICKS_TOKEN: ${{ secrets['COPILOT_MCP_DATABRICKS_TOKEN'] }}
+          DATABRICKS_HOST: ${{ vars['DATABRICKS_HOST'] }}
+        run: |
+          python scripts/mcp_sql_executor.py --plan mcp_plan.json --report mcp_execution_report.md --tool databricks_sql_execute
+
+      - name: Post final MCP execution report
+        if: steps.gate.outputs.should_execute == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('mcp_execution_report.md', 'utf8');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: Number('${{ steps.gate.outputs.issue_number }}'),
+              body: report
+            });
